@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'Dockerfile.spark'
+      - 'Dockerfile.jupyter'
   release:
     types: [published]
   workflow_dispatch:
