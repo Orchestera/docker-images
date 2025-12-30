@@ -42,6 +42,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=3.5.6,enable={{is_default_branch}}
             type=ref,event=tag
             type=sha,prefix=
 
@@ -77,6 +78,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.JUPYTER_IMAGE_NAME }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=3.5.6,enable={{is_default_branch}}
             type=ref,event=tag
             type=sha,prefix=
 
