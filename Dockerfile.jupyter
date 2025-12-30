@@ -1,0 +1,29 @@
+# syntax=docker/dockerfile:1.6
+# Jupyter image based on Sparklith Spark base image
+# Build: docker buildx build --platform linux/amd64 -t sparklith-jupyter:latest --load -f Dockerfile.jupyter .
+# Run:   docker run -p 8888:8888 sparklith-jupyter:latest
+
+ARG BASE_IMAGE=ghcr.io/orchestera/docker-images/spark:latest
+FROM ${BASE_IMAGE}
+
+USER root
+
+# Install JupyterLab and related packages
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install jupyterlab ipykernel
+
+# Register the kernel
+RUN python -m ipykernel install --name spark-python --display-name "Spark Python 3.10"
+
+# Set Jupyter-specific environment variables
+ENV JUPYTER_RUNTIME_DIR=/workspace/.jupyter/runtime \
+    JUPYTER_DATA_DIR=/workspace/.jupyter/data \
+    JUPYTER_TOKEN=dev
+
+EXPOSE 8888
+
+# Drop privileges
+USER spark
+
+# Start JupyterLab by default
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--ServerApp.token=dev", "--ServerApp.allow_origin=*"]
