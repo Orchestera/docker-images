@@ -13,7 +13,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/spark
+  IMAGE_NAME: orchestera/docker-images/spark
+  JUPYTER_IMAGE_NAME: orchestera/docker-images/jupyter
 
 jobs:
   build-and-push:
@@ -59,8 +60,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    env:
-      JUPYTER_IMAGE_NAME: ${{ github.repository }}/jupyter
     steps:
       - uses: actions/checkout@v4
 
