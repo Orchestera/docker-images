@@ -20,6 +20,10 @@ ENV JUPYTER_RUNTIME_DIR=/workspace/.jupyter/runtime \
     JUPYTER_DATA_DIR=/workspace/.jupyter/data \
     JUPYTER_TOKEN=dev
 
+# Create Jupyter directories writable by spark user
+RUN mkdir -p /workspace/.jupyter/runtime /workspace/.jupyter/data && \
+    chown -R spark:spark /workspace
+
 EXPOSE 8888
 
 # Drop privileges
