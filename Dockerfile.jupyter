@@ -16,13 +16,14 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 RUN python -m ipykernel install --name spark-python --display-name "Spark Python 3.10"
 
 # Set Jupyter-specific environment variables
-ENV JUPYTER_RUNTIME_DIR=/workspace/.jupyter/runtime \
+ENV JUPYTER_CONFIG_DIR=/workspace/.jupyter \
+    JUPYTER_RUNTIME_DIR=/workspace/.jupyter/runtime \
     JUPYTER_DATA_DIR=/workspace/.jupyter/data \
     JUPYTER_TOKEN=dev
 
 # Create Jupyter directories writable by spark user
 RUN mkdir -p /workspace/.jupyter/runtime /workspace/.jupyter/data && \
-    chown -R spark:spark /workspace
+    chown -R spark:spark /workspace/.jupyter
 
 EXPOSE 8888
 
