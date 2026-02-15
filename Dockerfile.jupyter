@@ -10,7 +10,7 @@ USER root
 
 # Install JupyterLab and related packages
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install jupyterlab ipykernel
+    uv pip install jupyterlab ipykernel jupyterhub
 
 # Register the kernel
 RUN python -m ipykernel install --name spark-python --display-name "Spark Python 3.10"
