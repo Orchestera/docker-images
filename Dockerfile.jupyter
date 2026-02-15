@@ -21,10 +21,9 @@ ENV JUPYTER_CONFIG_DIR=/workspace/.jupyter \
     JUPYTER_DATA_DIR=/workspace/.jupyter/data \
     JUPYTER_TOKEN=dev
 
-# Create Jupyter directories and make workspace paths writable for runtime UID 1000
+# Create Jupyter directories writable by the spark user (UID 185)
 RUN mkdir -p /workspace/.jupyter/runtime /workspace/.jupyter/data && \
-    chown -R spark:spark /workspace/.jupyter && \
-    chmod 0777 /workspace /workspace/.jupyter /workspace/.jupyter/runtime /workspace/.jupyter/data
+    chown -R spark:spark /workspace/.jupyter
 
 EXPOSE 8888
 
