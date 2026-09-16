@@ -1,55 +1,77 @@
 # syntax=docker/dockerfile:1.6
-# Sparklith base image with Spark 3.5.6, Python 3.10, and S3 support
-FROM apache/spark:3.5.6-python3
+#
+# The single public runtime for Orchestera client-mode Spark workloads.
+# Marimo uses this image as the driver; Spark uses the identical digest for
+# executor pods, preserving Spark/PySpark/JAR compatibility.
+FROM apache/spark:3.5.6@sha256:599722640c8a42ff5ecca329a3faa5371b3bd5c752b320776d5cdd1eed3441ac
 
-# S3 jar versions (can be overridden at build)
-# Use Hadoop 3.3.4 to match Spark 3.5.6's built-in Hadoop version
-ARG HADOOP_AWS_VER=3.3.4
-ARG AWS_SDK_BUNDLE_VER=1.12.746
-ARG ORCHESTERA_LIB_VER=0.1.0a3
+ARG SPARK_VERSION=3.5.6
+ARG PYTHON_VERSION=3.11.9
+ARG MARIMO_VERSION=0.24.2
+ARG ORCHESTERA_LIB_VERSION=0.1.0a4
+# Override only for pre-merge CI validation, e.g. a commit-pinned source
+# archive. Released images must retain the default PyPI package spec.
+ARG ORCHESTERA_LIB_SPEC=orchestera-lib==0.1.0a4
+ARG HADOOP_AWS_VERSION=3.3.4
+ARG AWS_SDK_BUNDLE_VERSION=1.12.746
+ARG POSTGRES_JDBC_VERSION=42.7.4
+ARG MYSQL_JDBC_VERSION=9.1.0
 
-# Switch to root user
+ARG HADOOP_AWS_SHA256=53f9ae03c681a30a50aa17524bd9790ab596b28481858e54efd989a826ed3a4a
+ARG AWS_SDK_BUNDLE_SHA256=0cb089209b56a4fd5b2dcf0e8a4b5e04e2d4e03e0623c80d4064f09712c520a0
+ARG POSTGRES_JDBC_SHA256=188976721ead8e8627eb6d8389d500dccc0c9bebd885268a3047180274a6031e
+ARG MYSQL_JDBC_SHA256=8776e2ebc46072c9a47ea59d98298c4273bd9f16a7b26b5dfa4744535aa26c62
+
 USER root
 
-# Ensure a consistent non-root user/group exists in the final image
+# The pinned uv image supplies only the binary; no mutable build-tool image is
+# pulled at build time.
+COPY --from=ghcr.io/astral-sh/uv:0.6.14@sha256:3362a526af7eca2fcd8604e6a07e873fb6e4286d8837cb753503558ce1213664 /uv /usr/local/bin/uv
+
+ENV UV_PYTHON_INSTALL_DIR=/opt/python \
+    VIRTUAL_ENV=/opt/venv \
+    PATH="/opt/venv/bin:${PATH}" \
+    PYSPARK_PYTHON=/opt/venv/bin/python \
+    HOME=/home/spark
+
+# Spark's executor entrypoint is inherited unchanged from apache/spark. The
+# virtual environment is used by both Marimo and Python executor UDFs.
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv python install "${PYTHON_VERSION}" && \
+    uv venv --python "${PYTHON_VERSION}" "${VIRTUAL_ENV}" && \
+    uv pip install --python "${VIRTUAL_ENV}/bin/python" \
+      "pyspark==${SPARK_VERSION}" \
+      "marimo==${MARIMO_VERSION}" \
+      "${ORCHESTERA_LIB_SPEC}" && \
+    test "$(python -c 'import pyspark; print(pyspark.__version__)')" = "${SPARK_VERSION}" && \
+    test "$(python -c 'import marimo; print(marimo.__version__)')" = "${MARIMO_VERSION}" && \
+    test "$(python -c 'import orchestera; print(orchestera.__name__)')" = "orchestera"
+
+# Both driver and executor have these jars on Spark's standard classpath.
 RUN set -eux; \
-    if ! getent group spark >/dev/null; then groupadd -g 1000 spark; fi; \
-    if ! id -u spark >/dev/null 2>&1; then useradd -m -u 1000 -g spark -s /bin/bash spark; fi; \
-    mkdir -p /home/spark && chown spark:spark /home/spark
+    cd "${SPARK_HOME}/jars"; \
+    curl --fail --location --retry 3 --output "hadoop-aws-${HADOOP_AWS_VERSION}.jar" \
+      "https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/${HADOOP_AWS_VERSION}/hadoop-aws-${HADOOP_AWS_VERSION}.jar"; \
+    echo "${HADOOP_AWS_SHA256}  hadoop-aws-${HADOOP_AWS_VERSION}.jar" | sha256sum --check --strict; \
+    curl --fail --location --retry 3 --output "aws-java-sdk-bundle-${AWS_SDK_BUNDLE_VERSION}.jar" \
+      "https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/${AWS_SDK_BUNDLE_VERSION}/aws-java-sdk-bundle-${AWS_SDK_BUNDLE_VERSION}.jar"; \
+    echo "${AWS_SDK_BUNDLE_SHA256}  aws-java-sdk-bundle-${AWS_SDK_BUNDLE_VERSION}.jar" | sha256sum --check --strict; \
+    curl --fail --location --retry 3 --output "postgresql-${POSTGRES_JDBC_VERSION}.jar" \
+      "https://repo1.maven.org/maven2/org/postgresql/postgresql/${POSTGRES_JDBC_VERSION}/postgresql-${POSTGRES_JDBC_VERSION}.jar"; \
+    echo "${POSTGRES_JDBC_SHA256}  postgresql-${POSTGRES_JDBC_VERSION}.jar" | sha256sum --check --strict; \
+    curl --fail --location --retry 3 --output "mysql-connector-j-${MYSQL_JDBC_VERSION}.jar" \
+      "https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/${MYSQL_JDBC_VERSION}/mysql-connector-j-${MYSQL_JDBC_VERSION}.jar"; \
+    echo "${MYSQL_JDBC_SHA256}  mysql-connector-j-${MYSQL_JDBC_VERSION}.jar" | sha256sum --check --strict
 
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-
-# Install Python 3.10 via uv and create venv
-ENV UV_PYTHON_INSTALL_DIR=/opt/python
-ENV VIRTUAL_ENV=/opt/venv
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv python install 3.10 && \
-    uv venv --python 3.10 $VIRTUAL_ENV
-
-# Pre-bake S3 support jars using Hadoop 3.3.4 to match Spark 3.5.6
-# Only add hadoop-aws and aws-java-sdk-bundle (hadoop-client JARs already present)
-RUN mkdir -p /opt/spark/jars && \
-    curl -fL "https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/${HADOOP_AWS_VER}/hadoop-aws-${HADOOP_AWS_VER}.jar" -o /opt/spark/jars/hadoop-aws-${HADOOP_AWS_VER}.jar && \
-    curl -fL "https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/${AWS_SDK_BUNDLE_VER}/aws-java-sdk-bundle-${AWS_SDK_BUNDLE_VER}.jar" -o /opt/spark/jars/aws-java-sdk-bundle-${AWS_SDK_BUNDLE_VER}.jar && \
-    chown spark:spark /opt/spark/jars/hadoop-aws-${HADOOP_AWS_VER}.jar /opt/spark/jars/aws-java-sdk-bundle-${AWS_SDK_BUNDLE_VER}.jar
-
-# Install orchestera-lib and pyspark from PyPI
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install orchestera-lib==${ORCHESTERA_LIB_VER} pyspark==3.5.6
-
-# Create workspace directory
-RUN mkdir -p /workspace && chown -R spark:spark /workspace
-
-# Set environment variables
-ENV NB_USER=spark \
-    NB_UID=1000 \
-    NB_GID=1000 \
-    HOME=/workspace \
-    PYSPARK_PYTHON=/opt/venv/bin/python
-
+RUN mkdir -p /home/spark /workspace && \
+    chown -R spark:spark /home/spark /workspace
 WORKDIR /workspace
 
-# Drop privileges
+LABEL org.opencontainers.image.title="Orchestera Spark runtime" \
+      org.opencontainers.image.description="Unified Marimo driver and Apache Spark executor runtime" \
+      org.opencontainers.image.version="${SPARK_VERSION}" \
+      io.orchestera.spark.version="${SPARK_VERSION}" \
+      io.orchestera.marimo.version="${MARIMO_VERSION}" \
+      io.orchestera.lib.version="${ORCHESTERA_LIB_VERSION}"
+
 USER spark
