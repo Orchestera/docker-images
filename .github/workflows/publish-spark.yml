@@ -17,7 +17,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Optional immutable release tag in addition to the commit SHA
+        description: Optional immutable tag for this source commit
         required: false
         type: string
 
@@ -81,7 +81,8 @@ jobs:
 
       - name: Extract image metadata
         id: meta
-        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        uses: >-
+          docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
@@ -93,7 +94,7 @@ jobs:
 
       - name: Build and push runtime
         id: build
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: .
           file: ./Dockerfile.spark
@@ -106,13 +107,14 @@ jobs:
 
       - name: Record immutable digest
         env:
-          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          DIGEST: ${{ steps.build.outputs.digest }}
         run: |
+          IMAGE="${REGISTRY}/${IMAGE_NAME}@${DIGEST}"
           {
             echo '### Published Spark runtime'
             echo
             echo "- Digest: \`${IMAGE}\`"
             echo "- Spark: \`${SPARK_VERSION}\`"
             echo '- Marimo: `0.24.2`'
-            echo '- orchestera-lib: `0.1.0a4`'
+            echo '- orchestera-lib: `0.1.0a6`'
           } >> "$GITHUB_STEP_SUMMARY"

@@ -16,5 +16,6 @@ docker run --rm --entrypoint /bin/sh "${image}" -ceu '
   test -f "$SPARK_HOME/jars/mysql-connector-j-9.1.0.jar"
   test "$(python -c "import pyspark; print(pyspark.__version__)")" = "3.5.6"
   python -c "import marimo, orchestera; assert marimo.__version__ == \"0.24.2\"; print(orchestera.__name__)"
+  test "$(python -c "from importlib.metadata import version; print(version(\"orchestera-lib\"))")" = "0.1.0a6"
   spark-submit --version 2>&1 | grep -F "version 3.5.6"
 '
