@@ -29,6 +29,12 @@ plane and uses the exact digest printed by the publishing workflow.
 
 ## Publication
 
+The image pins `orchestera-lib==0.1.0a6`. Merge and publish the
+`orchestera-lib` v0.1.0a6 release to PyPI **before** merging this image
+update; its PR smoke build must fetch the published wheel. After the image
+publishes, use its new immutable digest for fresh notebooks; old notebooks
+continue using the image they were launched with.
+
 Merges touching the runtime and explicit releases publish to public GHCR. The
 workflow prints an immutable digest, SBOM, and provenance. It also tags the
 source commit; version tags are only conveniences and must be resolved to a
