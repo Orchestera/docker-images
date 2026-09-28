@@ -116,5 +116,5 @@ jobs:
             echo "- Digest: \`${IMAGE}\`"
             echo "- Spark: \`${SPARK_VERSION}\`"
             echo '- Marimo: `0.24.2` (with the AI chat panel: pydantic-ai-slim `2.51.0`, MCP client)'
-            echo '- orchestera-lib: `0.1.0a7`'
+            echo '- orchestera-lib: `0.1.0a8`'
           } >> "$GITHUB_STEP_SUMMARY"
