@@ -8,6 +8,8 @@ image=${1:?usage: smoke-spark-runtime.sh <image>}
 # data-plane integration test proves the client-mode driver/executor path.
 docker run --rm --entrypoint /bin/sh "${image}" -ceu '
   test -x /opt/entrypoint.sh
+  # Pod Security restricted pins runAsUser 185 (orchestera-lib, sparklith-next).
+  test "$(id -u):$(id -g)" = "185:185"
   test -w /workspace
   test -w "$HOME"
   test -f "$SPARK_HOME/jars/hadoop-aws-3.3.4.jar"
@@ -16,7 +18,7 @@ docker run --rm --entrypoint /bin/sh "${image}" -ceu '
   test -f "$SPARK_HOME/jars/mysql-connector-j-9.1.0.jar"
   test "$(python -c "import pyspark; print(pyspark.__version__)")" = "3.5.6"
   python -c "import marimo, orchestera; assert marimo.__version__ == \"0.24.2\"; print(orchestera.__name__)"
-  test "$(python -c "from importlib.metadata import version; print(version(\"orchestera-lib\"))")" = "0.1.0a6"
+  test "$(python -c "from importlib.metadata import version; print(version(\"orchestera-lib\"))")" = "0.1.0a7"
   # The notebook AI chat panel: provider clients and the MCP client.
   test "$(python -c "from importlib.metadata import version; print(version(\"pydantic-ai-slim\"))")" = "2.51.0"
   python -c "import mcp, pydantic_ai, anthropic, openai, google.genai; from marimo._server.ai.mcp import get_mcp_client"

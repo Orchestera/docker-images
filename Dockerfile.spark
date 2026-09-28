@@ -12,10 +12,10 @@ ARG MARIMO_VERSION=0.24.2
 # notebook's environment) and, via marimo[mcp], its MCP client for the
 # workspace's Spark History MCP server. Must satisfy marimo's own range.
 ARG PYDANTIC_AI_VERSION=2.51.0
-ARG ORCHESTERA_LIB_VERSION=0.1.0a6
+ARG ORCHESTERA_LIB_VERSION=0.1.0a7
 # Override only for pre-merge CI validation, e.g. a commit-pinned source
 # archive. Released images must retain the default PyPI package spec.
-ARG ORCHESTERA_LIB_SPEC=orchestera-lib==0.1.0a6
+ARG ORCHESTERA_LIB_SPEC=orchestera-lib==0.1.0a7
 ARG HADOOP_AWS_VERSION=3.3.4
 ARG AWS_SDK_BUNDLE_VERSION=1.12.746
 ARG POSTGRES_JDBC_VERSION=42.7.4
