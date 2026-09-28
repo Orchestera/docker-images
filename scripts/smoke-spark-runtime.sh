@@ -17,5 +17,8 @@ docker run --rm --entrypoint /bin/sh "${image}" -ceu '
   test "$(python -c "import pyspark; print(pyspark.__version__)")" = "3.5.6"
   python -c "import marimo, orchestera; assert marimo.__version__ == \"0.24.2\"; print(orchestera.__name__)"
   test "$(python -c "from importlib.metadata import version; print(version(\"orchestera-lib\"))")" = "0.1.0a6"
+  # The notebook AI chat panel: provider clients and the MCP client.
+  test "$(python -c "from importlib.metadata import version; print(version(\"pydantic-ai-slim\"))")" = "2.51.0"
+  python -c "import mcp, pydantic_ai, anthropic, openai, google.genai; from marimo._server.ai.mcp import get_mcp_client"
   spark-submit --version 2>&1 | grep -F "version 3.5.6"
 '

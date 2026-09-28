@@ -8,6 +8,10 @@ FROM apache/spark:3.5.6@sha256:599722640c8a42ff5ecca329a3faa5371b3bd5c752b320776
 ARG SPARK_VERSION=3.5.6
 ARG PYTHON_VERSION=3.11.9
 ARG MARIMO_VERSION=0.24.2
+# Marimo's AI chat panel: its provider clients (BYOK keys come from the
+# notebook's environment) and, via marimo[mcp], its MCP client for the
+# workspace's Spark History MCP server. Must satisfy marimo's own range.
+ARG PYDANTIC_AI_VERSION=2.51.0
 ARG ORCHESTERA_LIB_VERSION=0.1.0a6
 # Override only for pre-merge CI validation, e.g. a commit-pinned source
 # archive. Released images must retain the default PyPI package spec.
@@ -41,11 +45,13 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv venv --python "${PYTHON_VERSION}" "${VIRTUAL_ENV}" && \
     uv pip install --python "${VIRTUAL_ENV}/bin/python" \
       "pyspark==${SPARK_VERSION}" \
-      "marimo==${MARIMO_VERSION}" \
+      "marimo[mcp]==${MARIMO_VERSION}" \
+      "pydantic-ai-slim[anthropic,openai,google]==${PYDANTIC_AI_VERSION}" \
       "${ORCHESTERA_LIB_SPEC}" && \
     test "$(python -c 'import pyspark; print(pyspark.__version__)')" = "${SPARK_VERSION}" && \
     test "$(python -c 'import marimo; print(marimo.__version__)')" = "${MARIMO_VERSION}" && \
-    test "$(python -c 'import orchestera; print(orchestera.__name__)')" = "orchestera"
+    test "$(python -c 'import orchestera; print(orchestera.__name__)')" = "orchestera" && \
+    python -c 'import mcp, pydantic_ai, anthropic, openai, google.genai'
 
 # Both driver and executor have these jars on Spark's standard classpath.
 RUN set -eux; \
@@ -72,6 +78,7 @@ LABEL org.opencontainers.image.title="Orchestera Spark runtime" \
       org.opencontainers.image.version="${SPARK_VERSION}" \
       io.orchestera.spark.version="${SPARK_VERSION}" \
       io.orchestera.marimo.version="${MARIMO_VERSION}" \
+      io.orchestera.pydantic-ai.version="${PYDANTIC_AI_VERSION}" \
       io.orchestera.lib.version="${ORCHESTERA_LIB_VERSION}"
 
 USER spark

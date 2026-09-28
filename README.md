@@ -11,8 +11,12 @@ ghcr.io/orchestera/docker-images/spark@sha256:<published-digest>
 
 The runtime is currently `linux/amd64` only. It contains Apache Spark/PySpark
 3.5.6, Marimo, `orchestera-lib`, S3A dependencies, and PostgreSQL/MySQL JDBC
-drivers. `/opt/entrypoint.sh` remains Apache Spark's executor entrypoint;
-Orchestera launches Marimo by overriding the notebook pod command.
+drivers. Marimo carries its AI chat panel's dependencies (`marimo[mcp]` and the
+Anthropic/OpenAI/Google clients via `pydantic-ai-slim`); the data plane
+configures the panel per notebook, with the user's own keys and the
+workspace's Spark History MCP server. `/opt/entrypoint.sh` remains Apache
+Spark's executor entrypoint; Orchestera launches Marimo by overriding the
+notebook pod command.
 
 ## Validation before merge
 
