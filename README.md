@@ -33,8 +33,8 @@ plane and uses the exact digest printed by the publishing workflow.
 
 ## Publication
 
-The image pins `orchestera-lib==0.1.0a6`. Merge and publish the
-`orchestera-lib` v0.1.0a6 release to PyPI **before** merging this image
+The image pins `orchestera-lib==0.1.0a7`. Merge and publish the
+`orchestera-lib` v0.1.0a7 release to PyPI **before** merging this image
 update; its PR smoke build must fetch the published wheel. After the image
 publishes, use its new immutable digest for fresh notebooks; old notebooks
 continue using the image they were launched with.
