@@ -12,6 +12,12 @@ ARG MARIMO_VERSION=0.24.2
 # notebook's environment) and, via marimo[mcp], its MCP client for the
 # workspace's Spark History MCP server. Must satisfy marimo's own range.
 ARG PYDANTIC_AI_VERSION=2.51.0
+# pydantic-ai-slim leaves the provider SDKs unbounded; anthropic 2.x breaks
+# its 2.51 Anthropic model (BetaMessageParam became a Union), so every chat
+# panel request to Anthropic fails. The versions the current image has.
+ARG ANTHROPIC_VERSION=1.9.0
+ARG OPENAI_VERSION=3.20.0
+ARG GOOGLE_GENAI_VERSION=2.25.0
 ARG ORCHESTERA_LIB_VERSION=0.1.0a8
 # Override only for pre-merge CI validation, e.g. a commit-pinned source
 # archive. Released images must retain the default PyPI package spec.
@@ -47,6 +53,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
       "pyspark==${SPARK_VERSION}" \
       "marimo[mcp]==${MARIMO_VERSION}" \
       "pydantic-ai-slim[anthropic,openai,google]==${PYDANTIC_AI_VERSION}" \
+      "anthropic==${ANTHROPIC_VERSION}" \
+      "openai==${OPENAI_VERSION}" \
+      "google-genai==${GOOGLE_GENAI_VERSION}" \
       "${ORCHESTERA_LIB_SPEC}" && \
     test "$(python -c 'import pyspark; print(pyspark.__version__)')" = "${SPARK_VERSION}" && \
     test "$(python -c 'import marimo; print(marimo.__version__)')" = "${MARIMO_VERSION}" && \

@@ -24,5 +24,8 @@ docker run --rm --entrypoint /bin/sh "${image}" -ceu '
   # The notebook AI chat panel: provider clients and the MCP client.
   test "$(python -c "from importlib.metadata import version; print(version(\"pydantic-ai-slim\"))")" = "2.51.0"
   python -c "import mcp, pydantic_ai, anthropic, openai, google.genai; from marimo._server.ai.mcp import get_mcp_client"
+  test "$(python -c "from importlib.metadata import version as v; print(v(\"anthropic\"), v(\"openai\"), v(\"google-genai\"))")" = "1.9.0 3.20.0 2.25.0"
+  # What pydantic-ai 2.51 does on every Anthropic request; a Union under anthropic 2.x.
+  python -c "from anthropic.types.beta import BetaMessageParam; BetaMessageParam(role=\"user\", content=\"x\")"
   spark-submit --version 2>&1 | grep -F "version 3.5.6"
 '
