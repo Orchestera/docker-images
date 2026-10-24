@@ -14,7 +14,10 @@ The runtime is currently `linux/amd64` only. It contains Apache Spark/PySpark
 drivers. Marimo carries its AI chat panel's dependencies (`marimo[mcp]` and the
 Anthropic/OpenAI/Google clients via `pydantic-ai-slim`); the data plane
 configures the panel per notebook, with the user's own keys and the
-workspace's Spark History MCP server. `/opt/entrypoint.sh` remains Apache
+workspace's Spark History MCP server. `orchestera.notebook`'s one-click job
+analysis runs on the same model and key. The provider SDKs are pinned because
+pydantic-ai-slim leaves them unbounded and anthropic 2.x breaks its Anthropic
+model. `/opt/entrypoint.sh` remains Apache
 Spark's executor entrypoint; Orchestera launches Marimo by overriding the
 notebook pod command.
 
@@ -33,8 +36,8 @@ plane and uses the exact digest printed by the publishing workflow.
 
 ## Publication
 
-The image pins `orchestera-lib==0.1.0a8`. Merge and publish the
-`orchestera-lib` v0.1.0a8 release to PyPI **before** merging this image
+The image pins `orchestera-lib==0.1.0a9`. Merge and publish the
+`orchestera-lib` v0.1.0a9 release to PyPI **before** merging this image
 update; its PR smoke build must fetch the published wheel. After the image
 publishes, use its new immutable digest for fresh notebooks; old notebooks
 continue using the image they were launched with.

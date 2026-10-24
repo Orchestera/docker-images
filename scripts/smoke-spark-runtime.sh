@@ -18,11 +18,16 @@ docker run --rm --entrypoint /bin/sh "${image}" -ceu '
   test -f "$SPARK_HOME/jars/mysql-connector-j-9.1.0.jar"
   test "$(python -c "import pyspark; print(pyspark.__version__)")" = "3.5.6"
   python -c "import marimo, orchestera; assert marimo.__version__ == \"0.24.2\"; print(orchestera.__name__)"
-  test "$(python -c "from importlib.metadata import version; print(version(\"orchestera-lib\"))")" = "0.1.0a8"
+  test "$(python -c "from importlib.metadata import version; print(version(\"orchestera-lib\"))")" = "0.1.0a9"
   # Karpenter must not evict live executors mid-job.
   python -c "from orchestera.kubernetes.pod_spec_builder import build_executor_pod_spec as b; assert b(application_name=\"s\", in_cluster=True, namespace=\"t\")[\"metadata\"][\"annotations\"] == {\"karpenter.sh/do-not-disrupt\": \"true\"}"
   # The notebook AI chat panel: provider clients and the MCP client.
   test "$(python -c "from importlib.metadata import version; print(version(\"pydantic-ai-slim\"))")" = "2.51.0"
   python -c "import mcp, pydantic_ai, anthropic, openai, google.genai; from marimo._server.ai.mcp import get_mcp_client"
+  test "$(python -c "from importlib.metadata import version as v; print(v(\"anthropic\"), v(\"openai\"), v(\"google-genai\"))")" = "1.9.0 3.20.0 2.25.0"
+  # orchestera.notebook job analysis: the Marimo internals it resolves the
+  # chat panel model through, and a request pydantic-ai can build with them.
+  python -c "from orchestera.notebook import analyze_spark_jobs, job_analysis_button; from marimo._config.manager import get_default_config_manager; from marimo._server.ai.config import AnyProviderConfig, get_chat_model, get_max_tokens; from marimo._server.ai.providers import get_completion_provider"
+  python -c "from anthropic.types.beta import BetaMessageParam; BetaMessageParam(role=\"user\", content=\"x\")"
   spark-submit --version 2>&1 | grep -F "version 3.5.6"
 '
