@@ -14,7 +14,9 @@ The runtime is currently `linux/amd64` only. It contains Apache Spark/PySpark
 drivers. Marimo carries its AI chat panel's dependencies (`marimo[mcp]` and the
 Anthropic/OpenAI/Google clients via `pydantic-ai-slim`); the data plane
 configures the panel per notebook, with the user's own keys and the
-workspace's Spark History MCP server. `/opt/entrypoint.sh` remains Apache
+workspace's Spark History MCP server. The provider SDKs are pinned because
+pydantic-ai-slim leaves them unbounded and anthropic 2.x breaks its Anthropic
+model. `/opt/entrypoint.sh` remains Apache
 Spark's executor entrypoint; Orchestera launches Marimo by overriding the
 notebook pod command.
 
